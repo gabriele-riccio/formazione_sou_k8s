@@ -30,7 +30,7 @@ formazione_sou_k8s/
 ## Metodi utilizzati:
 
 - **1. Blocco per gli indirizzi IP**(`Match Address`)
-- **2. Disabilitazione di Tutti i Metodi di Autenticazione**(PasswordAuthentication e 
+- **2. Disabilitazione di Tutti i Metodi di Autenticazione**(PasswordAuthentication e PubkeyAuthentication)
 - **3. Conflitto di Porta**(`Port`)
 - **4. Incompatibilità Crittografica**(`Ciphers` invcece di `3des`)
 - **5. Blocco Connessioni Non Autenticate**(`MaxStartups`)
