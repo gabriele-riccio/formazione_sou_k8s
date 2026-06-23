@@ -30,7 +30,7 @@ formazione_sou_k8s/
 ## Metodi utilizzati:
 
 - **1. Blocco per gli indirizzi IP**(`Match Address`)
-- **2. Disabilitazione di Tutti i Metodi di Autenticazione**(PasswordAuthentication e PubkeyAuthentication)
+- **2. Disabilitazione di Tutti i Metodi di Autenticazione**(`PasswordAuthentication` e `PubkeyAuthentication`)
 - **3. Conflitto di Porta**(`Port`)
 - **4. Incompatibilità Crittografica**(`Ciphers` invcece di `3des`)
 - **5. Blocco Connessioni Non Autenticate**(`MaxStartups`)
@@ -56,7 +56,7 @@ Match Address 10.0.2.2
     DenyUsers *
 ```
 
-**Effetto:** La direttiva 'DenyUsers *' all'interno del blocco Match dice al server di rifiutare l'autenticazione per qualsiasi utente. 
+**Effetto:** La direttiva `DenyUsers *` all'interno del blocco Match dice al server di rifiutare l'autenticazione per qualsiasi utente. 
 Il risultato è che la connessione TCP viene accettata, il canale cifrato viene stabilito, ma il server nega l'accesso nella fase di autenticazione.
 Il client riceve:
 
@@ -72,7 +72,7 @@ Per il **ripristino** bisogna semplicemente rimuovere il blocco `Match` da `sshd
 
 SSH supporta diversi metodi di autenticazione (password, chiave pubblica, GSSAPI). Disabilitandoli tutti contemporaneamente, il server non ha più nessun metodo valido da offrire al client.
 
-In questo caso nel file di configurazione 'sudo nano /etc/ssh/sshd_config' modifico i metodi di autenticazione PasswordAutentication e PubkeyAuthentication mettendoci semplicemente 'no' per bloccarli.
+In questo caso nel file di configurazione `sudo nano /etc/ssh/sshd_config` modifico i metodi di autenticazione `PasswordAutentication` e `PubkeyAuthentication` mettendoci semplicemente `no` per bloccarli.
 
 **Configurazione applicata:**
 
@@ -82,6 +82,7 @@ PubkeyAuthentication no
 ```
 Il server comunica al client quali metodi sono disponibili durante la Fase 5 e se tutti i metodi sono disabilitati, il server non ha nessun meccanismo valido da offrire e rifiuta la connessione immediatamente.
 Il client riceverà :
+
 ```
 Permission denied (gssapi-keyex,gssapi-with-mic)
 ```
@@ -96,16 +97,16 @@ Per ripristinarlo basta reimpostare `PubkeyAuthentication yes` e riavviarlo.
 
 La direttiva `Port` specifica su quale porta TCP il demone SSH si mette in ascolto. Se la porta indicata è già occupata da un altro processo, `sshd` non riesce a fare il bind e va in crash all'avvio.
 
-Per fare questo metodo ho avviato inizialmente un server HTTP sulla porta 8080 con 'python3 -m http.server 8080 &'. In questo modo ho la porta 22 in ascolto da SSH e la porta 80 da python.
-Ora uso la direttiva Port scrivendo 'Port 8080' alla fine del file di configurazione 
-Se provo ad effettuare il restart con 'sudo systemctl restart sshd' ottengo:
+Per fare questo metodo ho avviato inizialmente un server HTTP sulla porta 8080 con `python3 -m http.server 8080 &`. In questo modo ho la porta 22 in ascolto da SSH e la porta 80 da python.
+Ora uso la direttiva Port scrivendo `Port 8080` alla fine del file di configurazione 
+Se provo ad effettuare il restart con `sudo systemctl restart sshd` ottengo:
 
 ```bash
 [vagrant@rocky9 ~]$ sudo systemctl restart sshd
 Job for sshd.service failed because the control process exited with error code.
 See "systemctl status sshd.service" and "journalctl -xeu sshd.service" for details.
 ```
-Il servizio va in blocco con un errore in rosso(fatale) dato che la porta è gia occupata.
+Il servizio va in blocco con un errore in rosso dato che la porta è gia occupata.
 
 Per il ripristino basta rimuovere `Port 8080` da `sshd_config` e riavviare il servizio.
 
@@ -122,7 +123,7 @@ Avevo provato ad offrire come cifrario '3des' solo che era accettato da Rocky Li
 Le versioni moderne di OpenSSH hanno progressivamente rimosso il supporto per algoritmi considerati insicuri. Un algoritmo storico è `Chipers rijndael-cbc@lysator.liu.se` in modalità CBC che è presente in OpenSSH 7.6 (Ubuntu 18.04) ma rimosso nelle versioni successive.
 Configurando il server per offrire **solo** questo cifrario, i client moderni non riescono a trovare un algoritmo comune e la connessione fallisce.
 
-Ho verificato la differenza di algoritmi supportati tra Ubuntu 18.04 e il client MacOS con 'SSQ -Q cipher' e ho visto che il client MacOs non supportava 'Chipers rijndael-cbc@lysator.liu.se'.
+Ho verificato la differenza di algoritmi supportati tra Ubuntu 18.04 e il client MacOS con `SSQ -Q cipher` e ho visto che il client MacOs non supportava `Chipers rijndael-cbc@lysator.liu.se`.
 
 Ho aggiunto quindi questa configurazione nel file di configurazione
 ```
@@ -134,7 +135,7 @@ Andando a connettere il client, esso non riesce a negoziare un cifrario comune c
 Unable to negotiate with 192.168.56.21 port 22: no matching cipher found.
 Their offer: rijndael-cbc@lysator.liu.se
 ```
-In breve il server ha offerto solo rijndael-cbc@lysator.liu.se, ma il client non lo supporta.
+In breve il server ha offerto solo `rijndael-cbc@lysator.liu.se`, ma il client non lo supporta.
 La connessione viene chiusa prima ancora di stabilire il canale cifrato.
 
 Per ripristinare il tutto, basta eliminare la configurazione aggiunta dal file e utilizzare un cifrario comune a MacOs.
