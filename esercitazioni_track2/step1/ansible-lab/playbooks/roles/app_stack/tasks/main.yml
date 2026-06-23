@@ -1,0 +1,47 @@
+---
+- name: Crea rete Docker custom
+  community.docker.docker_network:
+    name: "{{ network_name }}"
+    driver: bridge
+    ipam_config:
+      - subnet: "{{ network_subnet }}"
+        gateway: "{{ network_gateway }}"
+    state: present
+
+- name: Avvia container web (Nginx)
+  community.docker.docker_container:
+    name: app_web
+    image: nginx:latest
+    state: started
+    restart_policy: always
+    networks:
+      - name: "{{ network_name }}"
+        ipv4_address: "{{ web_container_ip }}"
+    ports:
+      - "{{ web_container_port }}"
+
+- name: Avvia container cache (Redis)
+  community.docker.docker_container:
+    name: app_cache
+    image: redis:alpine
+    state: started
+    restart_policy: always
+    networks:
+      - name: "{{ network_name }}"
+        ipv4_address: "{{ cache_container_ip }}"
+
+- name: Recupera info container web
+  community.docker.docker_container_info:
+    name: app_web
+  register: web_info
+
+- name: Verifica se il container web sia in running
+  ansible.builtin.assert:
+    that:
+      - web_info.container.State.Status == "running"
+    fail_msg: "Il container web non è in stato running!"
+    success_msg: "Container web in stato: running"
+
+- name: Mostra conferma caricamento segreto Vault
+  ansible.builtin.debug:
+    msg: "Redis password caricata, lunga {{ redis_password | length }} caratteri"

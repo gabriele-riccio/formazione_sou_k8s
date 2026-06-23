@@ -1,0 +1,9 @@
+---
+- name: Deploy stack applicativo via Docker
+  hosts: rocky9
+  become: true
+  vars_files:
+    - "{{ playbook_dir }}/../vars/vault.yml"
+
+  roles:
+    - app_stack

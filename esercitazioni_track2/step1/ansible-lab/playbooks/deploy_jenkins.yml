@@ -1,0 +1,7 @@
+---
+- name: Deploy Jenkins Controller e Agent
+  hosts: rocky9
+  become: true
+
+  roles:
+    - jenkins_stack
