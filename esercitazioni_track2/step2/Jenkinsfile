@@ -26,4 +26,38 @@ pipeline {
                     if (gitTAG) {
                         env.DOCKER_TAG = gitTAG
                         echo "Build da tag Git - ${env.DOCKER_TAG}"
-                    } else if
+                    } else if (gitBranch == 'master' || gitBranch == 'main') {
+                        env.DOCKER_TAG = 'latest'
+                        echo "Build da master - latest"
+                    } else if (gitBranch == 'develop') {
+                        env.DOCKER_TAG = "develop-${gitSHA}"
+                        echo "Build da develop - ${env.DOCKER_TAG}"
+                    } else {
+                        env.DOCKER_TAG = "branch-${gitSHA}"
+                        echo "Build da branch generico - ${env.DOCKER_TAG}"
+                    }
+                }
+            }
+        }
+
+        stage('Build') {
+             steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', env.DOCKERHUB_CREDS_ID) {
+                        def image = docker.build("${env.IMAGE_NAME}:${env.DOCKER_TAG}")
+                        image.push()
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo " Immagine pushata: ${env.IMAGE_NAME}:${env.DOCKER_TAG}"
+        }
+        failure {
+            echo "Pipeline fallita."
+        }
+    }
+}
