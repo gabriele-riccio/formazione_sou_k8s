@@ -1,8 +1,24 @@
-# Step 2 - Pipeline Jenkins per Build e Push immagine Docker
+# Step 2 - Pipeline Jenkins dichiarativa (Groovy) per build immagine Docker
 
-## Obiettivo
+## Traccia
 
-Creare una pipeline Jenkins dichiarativa (Groovy) che automatizzi la build di un'immagine Docker di una web app Flask e il push su DockerHub, con logica di tagging basata sui tag e branch Git.
+- Creare repo GitHub denominata "formazione_sou_k8s"
+- Creare Dockerfile app di esempio Flask (Python) che esponga una pagina avente stringa "hello world" (prendere spunto da qui:
+  https://github.com/docker/awesome-compose/tree/master/flask/app)
+- Creare un account su DockerHub
+- Scrivere una pipeline dichiarativa Jenkins chiamata flask-app-example-build che esegua i seguenti passi:
+  - Effettui la build dell'immagine Docker della WebApp di esempio "hello world"
+  - Effettui il push di tale immagine sul proprio account Docker Hub appena creato
+> NOTA: In caso di problemi con il rate limit di Docker, installare localmente un registry Docker (va bene anche il registry nativo di
+> Docker https://docs.docker.com/registry/ senza autenticazione).
+
+- Modificare la pipeline in modo da tenere conto dei tag Git. Il tag dell'immagine Docker deve essere:
+  - Uguale al tag git se "buildata" da tag git
+  - latest se "buildata" da branch master
+  - uguale  a "develop + SHA commit GIT" se "buildata" da branch develop
+> NOTA: non è richiesto di lanciare il container con la webapp dalla pipeline. E' lasciato come esercizio Bonus (Tips: valutare se lanciarlo
+> sulla stessa instanza di Docker che ospita Jenkins o su un'altra su una diversa VM. Cosa occorre fare per interfacciarsi con il Docker da
+> Jenkins in ambo i casi ? )
 
 ---
 
