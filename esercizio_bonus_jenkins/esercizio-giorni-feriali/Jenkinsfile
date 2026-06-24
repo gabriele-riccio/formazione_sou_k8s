@@ -1,0 +1,31 @@
+pipeline {
+    agent any
+    
+    stages {
+        stage('Check del giorno della settimana') {
+            steps {
+                script {
+                    def oggi = new Date()
+                    int giornoSettimana = oggi[Calendar.DAY_OF_WEEK]
+                    
+                    if (giornoSettimana == Calendar.SATURDAY || giornoSettimana == Calendar.SUNDAY){
+                        echo "WARNING: oggi è festa, non verra eseguita la build."
+                        env.IS_WEEKEND = "true"
+                    } else {
+                        echo "Oggi è un giorno feriale, procedo con la build."
+                        env.IS_WEEKEND = "false"
+                    }
+                }
+            }
+        }
+        
+        stage('Build') {
+            when {
+                expression { env.IS_WEEKEND == 'false' }
+            }
+            steps {
+                echo "Eseguo la build ..."
+            }
+        }
+    }
+}
