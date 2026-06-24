@@ -20,7 +20,7 @@ pipeline {
             steps {
                 script {
                     def gitTag    = sh(script: "git tag --points-at HEAD", returnStdout: true).trim()
-                    def gitBranch = env.GIT_BRANCH.replaceALL('origin/','')?:''
+                    def gitBranch = env.GIT_BRANCH.replaceAll('origin/','')?:''
                     def gitSHA    = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
 
                     if (gitTAG) {
