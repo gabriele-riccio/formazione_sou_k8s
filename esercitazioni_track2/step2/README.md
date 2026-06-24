@@ -43,20 +43,152 @@ esercitazioni_Track2/step2/
 
 ## Componenti
 
-### Web App Flask
+### Web App Flask e requirements.txt
 
-App Python minimale che espone una pagina "hello world" sulla porta 5000.
+Per prima cosa ho creato nella sottodirectory `app` il file `app.py` che usa Flask cioè un micro-framework Python per creare web app.
+
+``` py
+
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route("/")
+def hello():
+    return "<h1>Hello World</h1>"
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
+
+```
+Con esso importo la classe Flask dalla libreria, poi creo con `app = Flask(__name__)` un'istanza dell'app indicando con `__name__` il modulo
+corrente.
+Utilizzo il decorator `@app.route("/")` per dire a Flask che quando qualcuno visita / di eseguire la funzione `hello()`, che definisco subito dopo in modo che stampi`Hello World`.
+
+Poi inserisco l'iterazione che fa in modo che se il modulo è il main, di fare ascoltare Flask su tutte le interfacce di rete con `host="0.0.0.0"`, altrimenti Flask ascolterebbe solo su localhost e non sarebbe raggiungibile fuori dal container, esponendo la porta 5000
+e inserendo `debug=True` per farlo riavviare se ci sono modifiche al codice.
+
+Poi ho creato il file `requirements.txt`, sempre nella stessa sottodirectory, per elencare tutte le librerie Python da installare ( ci serve solo Flask).
 
 ### Dockerfile
+Poi ho creato il Dockerfile per generare l'immagine Docker, che poi andrà pushata tramite il Jenkinsfile su Dockerhub, e per installare Flask e le sue dipendenze.
 
-Immagine basata su `python:3.11-alpine`. Il build avviene in 5 layer:
-1. Immagine base Python Alpine
-2. Impostazione WORKDIR
-3. Copia e installazione dipendenze
-4. Copia codice sorgente
-5. Esposizione porta 5000
+Il Dockerfile è una lista di istruzioni che esegue Docker per buildare l'immagine, dove ogni istruzione crea un `layer` in modo che se essi non cambiano vengono riutilizzate nelle build successive.
 
-### Jenkinsfile
+``` bash
+FROM python:3.11-alpine
+
+WORKDIR /app
+
+COPY app/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app/ .
+
+EXPOSE 5000
+
+CMD ["python", "app.py"]
+
+```
+
+Per buildare l'immagine ho descritto 5 layer:
+1. L'immagine che ho deciso di buildare è basata su `python:3.11-alpine`(molto più leggera rispetto a
+   debian/ubuntu linux).
+2. Ho impostato la cartella dentro il container dove avvengono le operazioni con `WORKDIR/app`.
+3. Con Copy ho copiato soltanto il requirements.txt prima del resto per far installare con RUN pip install Flask e le sue dipendenze in modo
+   da ottimizzare le build successive senza reinstallare Flask etc.
+5. Dopo aver installato le dipendenze ho copiato il codice sorgente.
+6. Infine ho esposto la porta 5000 e inserito i comandi che verranno eseguiti quando parte il container(python e app.py).
+
+### Creazione account Dockerhub e inserimento credenziali Jenkins
+Ho creato il mio account e un repository pubblico su DockerHub(registro pubblico immagini docker) dove poi ho pushato la mia prima immagine docker tramite Jenkins(tramite quanto scritto nella pipeline).
+
+Come feci con GitHub ho generato un Access Token e poi una volta fatta partire la vm dell'esercizio precedente e raggiunto il sito di Jenkins ho salvato le credenziali in esso inserendo Username, Password( Access Token ) e un ID(che ho potuto scegliere in autonomia).
+
+## Jenkinsfile
+
+Ho creato il Jenkinsfile( che poi riprenderò da GitHub una volta pushato tramite Pipeline script from SCM) per scrivere una pipeline dichiarativa che dichiari in maniera strutturata i blocchi(pipeline, stages, steps) invece di scriverlo in maniera imperativa pura.
+
+```grovy
+pipeline {
+    agent any
+
+    environment {
+        DOCKERHUB_USER     = 'gabbogr71809'
+        IMAGE_NAME         = "${DOCKERHUB_USER}/flask-app-example"
+        DOCKERHUB_CREDS_ID = 'dockerhub-credentials'
+
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Determine Tag') {
+            steps {
+                script {
+                    def gitTag    = sh(script: "git tag --points-at HEAD", returnStdout: true).trim()
+                    def gitBranch = env.GIT_BRANCH.replaceAll('origin/','')?:''
+                    def gitSHA    = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+
+                    if (gitTag) {
+                        env.DOCKER_TAG = gitTag
+                        echo "Build da tag Git - ${env.DOCKER_TAG}"
+                    } else if (gitBranch == 'master' || gitBranch == 'main') {
+                        env.DOCKER_TAG = 'latest'
+                        echo "Build da master - latest"
+                    } else if (gitBranch == 'develop') {
+                        env.DOCKER_TAG = "develop-${gitSHA}"
+                        echo "Build da develop - ${env.DOCKER_TAG}"
+                    } else {
+                        env.DOCKER_TAG = "branch-${gitSHA}"
+                        echo "Build da branch generico - ${env.DOCKER_TAG}"
+                    }
+                }
+            }
+        }
+
+        stage('Build') {
+             steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', env.DOCKERHUB_CREDS_ID) {
+                        def image = docker.build("${env.IMAGE_NAME}:${env.DOCKER_TAG}", "esercitazioni_track2/step2")
+                        image.push()
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo " Immagine pushata: ${env.IMAGE_NAME}:${env.DOCKER_TAG}"
+        }
+        failure {
+            echo "Pipeline fallita."
+        }
+    }
+}
+```
+
+Ci sono i primi due blocchi dove:
+1. agent any : Specifico che può eseguire la pipeline qualsiasi nodo/agent disponibile.
+2. blocco environment : Dove definisco tutte le variabili d'ambiente che utilizzo nella pipeline(Username,Image e Id).
+> Nel Image_Name avevo dimenticato la sintassi ${}, in questo modo la variabile non veniva espansa e il suo valore diventava letteralmente `{DOCKERHUB_USER}/flask-app-example`(E' stato uno dei motivi per il quale all'inizio non compilava).
+
+Poi ci sono degli stages:
+1. `Checkout`: Utilizzo il comando checkout scm(Source Control Management) che scarica il codice sorgente da GitHub.
+2. `Determine Tag`: Qui viene determinato il tag dell'immagine docker tramite i branch/tag di git. Inserisco un blocco script{} per scrivere
+   in logica Groovy libera all'interno degli step dove definisco 3 variabili git:
+   - gitTag: Attraverso il comando git tag --points-at HEAD restituisce i tag Git che puntano al commit attuale(se non sono presenti tag
+     viene lasciato vuoto).
+   - gitBranch: Attraverso il comando env.GIT_BRANCH 
+
+
 
 Pipeline dichiarativa con 3 stage:
 - **Checkout** — scarica il codice da GitHub
