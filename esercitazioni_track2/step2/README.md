@@ -237,4 +237,5 @@ Tag prodotti durante l'esercizio:
 | `v1.0.0` | tag Git `v1.0.0` |
 | `develop-d442b04` | branch `develop` |
 
-Output 
+## DockerHub
+![prima parte_DockerHub](step2/Screenshot%202026-06-24%20alle%2014.50.47.png)
