@@ -23,7 +23,7 @@ pipeline {
                     def gitBranch = env.GIT_BRANCH.replaceAll('origin/','')?:''
                     def gitSHA    = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
 
-                    if (gitTAG) {
+                    if (gitTag) {
                         env.DOCKER_TAG = gitTag
                         echo "Build da tag Git - ${env.DOCKER_TAG}"
                     } else if (gitBranch == 'master' || gitBranch == 'main') {
