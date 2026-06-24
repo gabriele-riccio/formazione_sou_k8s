@@ -75,7 +75,7 @@ Poi ho creato il Dockerfile per generare l'immagine Docker, che poi andrà pusha
 
 Il Dockerfile è una lista di istruzioni che esegue Docker per buildare l'immagine, dove ogni istruzione crea un `layer` in modo che se essi non cambiano vengono riutilizzate nelle build successive.
 
-``` bash
+``` dockerfile
 FROM python:3.11-alpine
 
 WORKDIR /app
@@ -109,7 +109,7 @@ Come feci con GitHub ho generato un Access Token e poi una volta fatta partire l
 
 Ho creato il Jenkinsfile( che poi riprenderò da GitHub una volta pushato tramite Pipeline script from SCM) per scrivere una pipeline dichiarativa che dichiari in maniera strutturata i blocchi(pipeline, stages, steps) invece di scriverlo in maniera imperativa pura.
 
-```grovy
+```groovy
 pipeline {
     agent any
 
@@ -175,36 +175,40 @@ pipeline {
 }
 ```
 
-Ci sono i primi due blocchi dove:
+Ci sono **i primi due blocchi** dove:
 1. agent any : Specifico che può eseguire la pipeline qualsiasi nodo/agent disponibile.
 2. blocco environment : Dove definisco tutte le variabili d'ambiente che utilizzo nella pipeline(Username,Image e Id).
 > Nel Image_Name avevo dimenticato la sintassi ${}, in questo modo la variabile non veniva espansa e il suo valore diventava letteralmente `{DOCKERHUB_USER}/flask-app-example`(E' stato uno dei motivi per il quale all'inizio non compilava).
 
-Poi ci sono degli stages:
-1. `Checkout`: Utilizzo il comando checkout scm(Source Control Management) che scarica il codice sorgente da GitHub.
-2. `Determine Tag`: Qui viene determinato il tag dell'immagine docker tramite i branch/tag di git. Inserisco un blocco script{} per scrivere
-   in logica Groovy libera all'interno degli step dove definisco 3 variabili git:
-   - gitTag: Attraverso il comando git tag --points-at HEAD restituisce i tag Git che puntano al commit attuale(se non sono presenti tag
-     viene lasciato vuoto).
-   - gitBranch: Attraverso il comando env.GIT_BRANCH 
+Poi ci sono degli **stages** definiti con def che defenisce le variabili locali:
+> In una pipeline dichiarativa, i blocchi `steps` accettano solo istruzioni predefinite Jenkins.
+> Quando voglio scrivere logica Groovy libera (variabili, if/else) devo racchiuderla dentro un blocco `script { }`(lo uso per gitTag e      > gitSHA).
 
+1. **`Checkout`**: Utilizzo il comando checkout scm(Source Control Management) che scarica il codice sorgente da GitHub.
+2. **`Determine Tag`**: Qui viene determinato il tag dell'immagine docker tramite i branch/tag di git. Inserisco un blocco script{} per
+   scrivere in logica Groovy libera all'interno degli step dove definisco 3 variabili git:
+   - **`gitTag`**: Attraverso il comando git tag --points-at HEAD restituisce i tag Git che puntano al commit attuale(se non sono presenti
+     tag viene lasciato vuoto).
+   - **`gitBranch`**: Attraverso il comando env.GIT_BRANCH che mi rappresenta la variabile Jenkins con il nome del branch(con replaceall
+     elimino origin/ che di solito sta davanti il branch).
+   - **`gitSHA`**: Attraverso il comando git rev-parse --short HEAD restituisce i primi 7 caratteri del commit per il tag.
+   Poi c'è il blocco `if/else` che se la condizione è verificata crea una variabile d'ambiente env.DOCKER_TAG chiamata in maniera diversa a     seconda del tipo di tag:
 
+   | Trigger | Tag immagine Docker |
+   |---|---|
+   | Tag Git (es. `v1.0.0`) | uguale al tag Git |
+   | Branch `main` | `latest` |
+   | Branch (es.`develop`) | `develop-<SHA commit>` |
 
-Pipeline dichiarativa con 3 stage:
-- **Checkout** — scarica il codice da GitHub
-- **Determine Tag** — determina il tag Docker in base a branch/tag Git
-- **Build** — esegue build e push su DockerHub
+3. **`Build`**: Dove ho inserito delle istruzioni per la build:
+   - **`docker.withRegistry(url, credId)`** che usando le credenziali Jenkins si autentica al registry(DockerHub)
+   - **`docker.build(nome:tag context)`** che esegue la build dell'immagine, con il tag che viene specificato ogni volta con
+     `${env.DOCKER_TAG}`.
+     > Inserisco il build context esercitazioni_track2/step2 dato che senza esso Docker cerca il file nella root dell'ambiente di lavoro e
+     > non trovandolo la build fallisce.
+   - **`image.push()`** che fa il push dell'immagine su DockerHub con il tag specificato in docker.build.
 
----
-
-## Logica di tagging
-
-| Trigger | Tag immagine Docker |
-|---|---|
-| Tag Git (es. `v1.0.0`) | uguale al tag Git |
-| Branch `main` | `latest` |
-| Branch `develop` | `develop-<SHA commit>` |
-| Altro branch | `branch-<SHA commit>` |
+Infine c'è il blocco **post** che viene eseguito sempre alla fine della pipeline, indipendentemente dall'esito, con le sezioni `success` e `failure` vengono eseguite rispettivamente solo in caso di successo o fallimento.
 
 ---
 
@@ -213,14 +217,12 @@ Pipeline dichiarativa con 3 stage:
 - Plugin **Docker Pipeline** installato
 - Credenziali DockerHub salvate in Jenkins con ID `dockerhub-credentials`
 - Agente Jenkins con accesso al socket Docker (`/var/run/docker.sock` montato)
-
 ---
 
 ## Ambiente
 
 - Jenkins in esecuzione su VM Rocky Linux 9 (`192.168.56.20`) via Vagrant + Docker
 - Jenkins controller + inbound agent sulla rete `jenkins_network`
-
 ---
 
 ## Risultato
@@ -234,3 +236,5 @@ Tag prodotti durante l'esercizio:
 | `latest` | branch `main` |
 | `v1.0.0` | tag Git `v1.0.0` |
 | `develop-d442b04` | branch `develop` |
+
+Output 
