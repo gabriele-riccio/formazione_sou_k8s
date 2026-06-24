@@ -24,7 +24,7 @@ pipeline {
                     def gitSHA    = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
 
                     if (gitTAG) {
-                        env.DOCKER_TAG = gitTAG
+                        env.DOCKER_TAG = gitTAg
                         echo "Build da tag Git - ${env.DOCKER_TAG}"
                     } else if (gitBranch == 'master' || gitBranch == 'main') {
                         env.DOCKER_TAG = 'latest'
