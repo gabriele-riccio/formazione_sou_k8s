@@ -8,11 +8,11 @@ Automazione completa dell'infrastruttura: una VM Rocky Linux 9 gestita da Vagran
 
 | # | Requisito | Stato |
 |---|-----------|-------|
-| 1 | VM Rocky Linux 9 via Vagrant (Intel) | ✅ |
-| 2 | Installazione Docker via Ansible | ✅ |
-| 3 | Configurazione Docker Network con IP statici via Ansible | ✅ |
-| 4 | Jenkins Master via Ansible + Docker con IP statico | ✅ |
-| 5 | Jenkins Agent via Ansible + Docker collegato al Master | ✅ |
+| 1 | VM Rocky Linux 9 via Vagrant (Intel) | Completato |
+| 2 | Installazione Docker via Ansible | Completato |
+| 3 | Configurazione Docker Network con IP statici via Ansible | Completato |
+| 4 | Jenkins Master via Ansible + Docker con IP statico | Completato |
+| 5 | Jenkins Agent via Ansible + Docker collegato al Master | Completato |
 
 ---
 
