@@ -1,6 +1,5 @@
 # Step 1 — Workstation Mac
 
-Progetto finale del percorso formazione_sou (Track 2).  
 Automazione completa dell'infrastruttura: una VM Rocky Linux 9 gestita da Vagrant viene configurata interamente tramite Ansible, che installa Docker, configura le reti e deploya Jenkins Master e Agent come container.
 
 ---
