@@ -1,0 +1,14 @@
+---
+- name: Esercizio con Ansible Vault
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars_files:
+    - vault_vars.yml
+
+  tasks:
+    - name: Stampa le variabili contenute nel vault
+      debug:
+        msg: "Utente: {{ db_user }} | Password: {{ db_password }} | API Key: {{ api_key }}"
+
