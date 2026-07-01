@@ -136,8 +136,3 @@ come richiesto dall'esercizio.
 ## Riferimenti
 
 - Scaffold generato con `helm create` (Helm 3, non più `helm init`, deprecato da Helm 2)
-
-## Prossimo step
-
-Step 4 — pipeline Jenkins dichiarativa che recupera il chart da GitHub ed esegue
-`helm install`/`upgrade` sul cluster Kubernetes locale, namespace `formazione-sou`.
