@@ -1,0 +1,16 @@
+---
+- name: Playbook per le liste dei pacchetti
+  hosts: rocky9
+  become: true
+  vars:
+    packages:
+      tree: present
+      wget: absent
+
+  tasks:
+    - name: Installazione o rimozione pacchetti
+      ansible.builtin.dnf:
+        name: "{{ item.key }}"
+        state: "{{ item.value }}"
+        disablerepo: docker-ce
+      loop: "{{ packages | dict2items }}"
