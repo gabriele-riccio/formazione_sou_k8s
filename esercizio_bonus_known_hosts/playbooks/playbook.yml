@@ -1,0 +1,7 @@
+---
+- name: Test di connettività SSH
+  hosts: rocky9
+  gather_facts: false
+  tasks:
+    - name: Ping della VM
+      ansible.builtin.ping:
