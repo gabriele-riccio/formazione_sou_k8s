@@ -1,0 +1,35 @@
+---
+- name: Installa Docker su Rocky Linux 9
+  hosts: rocky9
+  become: true
+  tasks:
+    - name: Installa dipendenze
+      dnf:
+        name:
+          - python3-setuptools
+          - python3-pip
+        state: present
+
+    - name: Installa libreria requests per Python
+      pip:
+        name: requests
+
+    - name: Aggiungi repo Docker
+      command: dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+    - name: Installa Docker
+      dnf:
+        name: docker-ce
+        state: present
+
+    - name: Avvia e abilita Docker
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Aggiungi vagrant al gruppo docker
+      user:
+        name: vagrant
+        groups: docker
+        append: true
