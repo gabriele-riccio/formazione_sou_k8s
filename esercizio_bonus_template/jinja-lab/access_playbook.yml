@@ -1,0 +1,27 @@
+---
+- name: Genera whitelist da template
+  hosts: localhost
+  gather_facts: no
+  vars:
+    utenti_whitelist:
+      - alice
+      - bob
+      - carlo
+  tasks:
+    - name: Creazione file temporaneo da template
+      ansible.builtin.template:
+        src: templates/access_whitelist.j2
+        dest: /tmp/access_whitelist.txt
+
+- name: Applica whitelist sul target
+  hosts: jinjalab
+  gather_facts: no
+  tasks:
+    - name: Inserisci whitelist prima della riga di deny globale
+      ansible.builtin.blockinfile:
+        path: /etc/security/access.conf
+        block: "{{ lookup('ansible.builtin.file', '/tmp/access_whitelist.txt') }}"
+        insertbefore: '^-:ALL:ALL$'
+        create: yes
+      become: yes
+

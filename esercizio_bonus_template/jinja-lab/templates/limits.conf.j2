@@ -1,0 +1,7 @@
+{% if ambiente == 'produzione' %}
+{{ nome_utente }} hard nofile 10000
+{{ nome_utente }} soft nofile 10000
+{% elif ambiente in ['collaudo', 'sviluppo'] %}
+{{ nome_utente }} hard nofile 1000
+{{ nome_utente }} soft nofile 1000
+{% endif %}

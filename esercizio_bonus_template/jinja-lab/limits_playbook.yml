@@ -1,0 +1,23 @@
+---
+- name: Genera limits.conf da template
+  hosts: localhost
+  gather_facts: no
+  vars:
+    nome_utente: "appuser"
+    ambiente: "produzione"
+  tasks:
+    - name: Creazione file temporaneo da template
+      ansible.builtin.template:
+        src: templates/limits.conf.j2
+        dest: /tmp/limits_output.txt
+- name: Apllica limits.conf sul target
+  hosts: jinjalab
+  gather_facts: no
+  tasks:
+    - name: Append blocco a /etc/security/limits.conf
+      ansible.builtin.blockinfile:
+        path: /etc/security/limits.conf
+        block: "{{ lookup('ansible.builtin.file', '/tmp/limits_output.txt') }}"
+        insertafter: EOF
+        create: yes
+      become: yes
