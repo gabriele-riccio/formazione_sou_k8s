@@ -78,6 +78,7 @@ Quindi codifico 2 nuovi valori di `username` e `password` in base64:
 ```bash
 echo -n "paperino" | base64   # cGFwZXJpbm8=
 echo -n "admin456" | base64   # YWRtaW40NTY=
+```
 
 Poi copio il file yaml in uno nuovo scrivendo i due valori Base64 appena calcolati in `data.username` e `data.password`, e cambio il `metadata.name` in uno nuovo:
 
