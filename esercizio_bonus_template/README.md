@@ -339,13 +339,6 @@ Risultato finale nel file:
 +:carlo:ALL
 -:ALL:ALL
 ```
-
 Le regole di permit precedono la regola generale di deny: `pam_access` autorizzerà alice, bob e carlo; qualsiasi altro utente verrà negato dalla riga finale. Rilanciando il playbook senza modifiche: `changed=0` su entrambi i play (idempotenza confermata).
 
-
-
-
-
 ---
-
-*Documentazione realizzata nell'ambito della DevOps Academy di Sourcesense — repository `formazione_sou_k8s`.*
