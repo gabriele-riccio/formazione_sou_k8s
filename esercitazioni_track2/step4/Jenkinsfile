@@ -1,0 +1,99 @@
+pipeline {
+    agent any
+
+    environment {
+        NAMESPACE       = 'formazione-sou'
+        RELEASE_NAME    = 'flask-app-example'
+        CHART_PATH      = 'esercitazioni_track2/step3/charts/flask-app'
+        LOCAL_PORT      = '16443'
+        MAC_USER        = 'gabrielericciosourcesense'
+        MAC_GATEWAY_IP  = '192.168.56.1'
+        KUBECONFIG_FILE = "${WORKSPACE}/runtime-kubeconfig.yaml"
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/gabriele-riccio/formazione_sou_k8s.git'
+            }
+        }
+
+        stage('Trova porta Minikube sul Mac') {
+            steps {
+                withCredentials([string(credentialsId: 'mac-ssh-password', variable: 'MAC_PASSWORD')]) {
+                    script {
+                        env.MINIKUBE_REAL_PORT = sh(
+                            script: """
+                                sshpass -p '${MAC_PASSWORD}' ssh -o StrictHostKeyChecking=no ${MAC_USER}@${MAC_GATEWAY_IP} \
+                                "kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}'" | sed 's|.*:||'
+                            """,
+                            returnStdout: true
+                        ).trim()
+                        echo "Porta reale Minikube sul Mac: ${env.MINIKUBE_REAL_PORT}"
+                    }
+                }
+            }
+        }
+ 
+        stage('Apri tunnel SSH verso Minikube') {
+            steps {
+                withCredentials([string(credentialsId: 'mac-ssh-password', variable: 'MAC_PASSWORD')]) {
+                    sh """
+                        sshpass -p '${MAC_PASSWORD}' ssh -f -N -o StrictHostKeyChecking=no \
+                          -L ${LOCAL_PORT}:127.0.0.1:${env.MINIKUBE_REAL_PORT} \
+                          ${MAC_USER}@${MAC_GATEWAY_IP}
+                        sleep 2
+                        echo "Tunnel aperto: 127.0.0.1:${LOCAL_PORT} -> Mac:${env.MINIKUBE_REAL_PORT}"
+                    """
+                }
+            }
+        }
+ 
+        stage('Genera kubeconfig runtime') {
+            steps {
+                withCredentials([file(credentialsId: 'jenkins-kubeconfig', variable: 'KUBECONFIG_TEMPLATE')]) {
+                    sh """
+                        sed 's/__MINIKUBE_PORT__/${LOCAL_PORT}/' "\$KUBECONFIG_TEMPLATE" > ${KUBECONFIG_FILE}
+                    """
+                }
+            }
+        }
+ 
+        stage('Verifica connessione al cluster') {
+            steps {
+                sh "kubectl --kubeconfig=${KUBECONFIG_FILE} get namespace ${NAMESPACE}"
+            }
+        }
+ 
+        stage('Helm lint') {
+            steps {
+                sh "helm lint ${CHART_PATH}"
+            }
+        }
+ 
+        stage('Helm upgrade --install') {
+            steps {
+                sh """
+                    helm upgrade --install ${RELEASE_NAME} ${CHART_PATH} \
+                      --kubeconfig=${KUBECONFIG_FILE} \
+                      --namespace ${NAMESPACE} \
+                      --create-namespace
+                """
+            }
+        }
+    }
+ 
+    post {
+        always {
+            sh 'pkill -f "ssh -f -N" || true'
+        }
+        success {
+            echo "Deploy completato su namespace ${NAMESPACE}"
+        }
+        failure {
+            echo "Deploy fallito, controlla i log sopra"
+        }
+    }
+}
