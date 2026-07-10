@@ -41,16 +41,20 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'mac-ssh-password', variable: 'MAC_PASSWORD')]) {
                     sh """
-                        sshpass -p '${MAC_PASSWORD}' ssh -f -N -o StrictHostKeyChecking=no \
+                        sshpass -p '${MAC_PASSWORD}' ssh -f -N -o StrictHostKeyChecking=no -o ExitOnForwardFailure=yes \
                           -L ${LOCAL_PORT}:127.0.0.1:${env.MINIKUBE_REAL_PORT} \
                           ${MAC_USER}@${MAC_GATEWAY_IP}
+                        TUNNEL_EXIT=\$?
+                        echo "Exit code SSH tunnel: \$TUNNEL_EXIT"
                         sleep 2
-                        echo "Tunnel aperto: 127.0.0.1:${LOCAL_PORT} -> Mac:${env.MINIKUBE_REAL_PORT}"
+                        echo "--- Verifica porta in ascolto ---"
+                        (ss -tln 2>/dev/null || netstat -tln 2>/dev/null) | grep ${LOCAL_PORT} || (echo "ERRORE: porta ${LOCAL_PORT} non in ascolto, tunnel non attivo" && exit 1)
+                        echo "Tunnel confermato attivo: 127.0.0.1:${LOCAL_PORT} -> Mac:${env.MINIKUBE_REAL_PORT}"
                     """
                 }
             }
         }
- 
+
         stage('Genera kubeconfig runtime') {
             steps {
                 withCredentials([file(credentialsId: 'jenkins-kubeconfig', variable: 'KUBECONFIG_TEMPLATE')]) {
