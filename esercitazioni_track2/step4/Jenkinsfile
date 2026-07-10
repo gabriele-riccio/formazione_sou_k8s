@@ -44,12 +44,22 @@ pipeline {
                         sshpass -p '${MAC_PASSWORD}' ssh -f -N -o StrictHostKeyChecking=no -o ExitOnForwardFailure=yes \
                           -L ${LOCAL_PORT}:127.0.0.1:${env.MINIKUBE_REAL_PORT} \
                           ${MAC_USER}@${MAC_GATEWAY_IP}
-                        TUNNEL_EXIT=\$?
-                        echo "Exit code SSH tunnel: \$TUNNEL_EXIT"
-                        sleep 2
-                        echo "--- Verifica porta in ascolto ---"
-                        (ss -tln 2>/dev/null || netstat -tln 2>/dev/null) | grep ${LOCAL_PORT} || (echo "ERRORE: porta ${LOCAL_PORT} non in ascolto, tunnel non attivo" && exit 1)
-                        echo "Tunnel confermato attivo: 127.0.0.1:${LOCAL_PORT} -> Mac:${env.MINIKUBE_REAL_PORT}"
+                        echo "Exit code SSH tunnel: \$?"
+                        echo "--- Verifica raggiungibilita' porta locale (via curl) ---"
+                        SUCCESS=0
+                        for i in 1 2 3 4 5; do
+                            if curl -sk --max-time 2 https://127.0.0.1:${LOCAL_PORT}/version >/dev/null 2>&1; then
+                                echo "Tunnel raggiungibile al tentativo \$i"
+                                SUCCESS=1
+                                break
+                            fi
+                            echo "Tentativo \$i: non ancora raggiungibile, riprovo..."
+                            sleep 1
+                        done
+                        if [ "\$SUCCESS" -ne 1 ]; then
+                            echo "ERRORE: tunnel non raggiungibile dopo 5 tentativi"
+                            exit 1
+                        fi
                     """
                 }
             }
