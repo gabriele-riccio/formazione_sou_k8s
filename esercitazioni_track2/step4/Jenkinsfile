@@ -41,25 +41,27 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'mac-ssh-password', variable: 'MAC_PASSWORD')]) {
                     sh """
-                        sshpass -p '${MAC_PASSWORD}' ssh -f -N -o StrictHostKeyChecking=no -o ExitOnForwardFailure=yes \
+                        sshpass -p '${MAC_PASSWORD}' ssh -N -o StrictHostKeyChecking=no -o ExitOnForwardFailure=yes \
                           -L ${LOCAL_PORT}:127.0.0.1:${env.MINIKUBE_REAL_PORT} \
-                          ${MAC_USER}@${MAC_GATEWAY_IP}
-                        echo "Exit code SSH tunnel: \$?"
-                        echo "--- Verifica raggiungibilita' porta locale (via curl, output completo) ---"
-                        SUCCESS=0
-                        for i in 1 2 3; do
-                            echo "=== Tentativo \$i ==="
-                            curl -vk --max-time 3 https://127.0.0.1:${LOCAL_PORT}/version
-                            CURL_EXIT=\$?
-                            echo "Curl exit code: \$CURL_EXIT"
-                            if [ "\$CURL_EXIT" -eq 0 ]; then
-                                SUCCESS=1
-                                break
-                            fi
-                            sleep 1
-                        done
-                        if [ "\$SUCCESS" -ne 1 ]; then
-                            echo "ERRORE: tunnel non raggiungibile"
+                          ${MAC_USER}@${MAC_GATEWAY_IP} > /tmp/tunnel.log 2>&1 &
+                        TUNNEL_PID=\$!
+                        echo "PID tunnel avviato: \$TUNNEL_PID"
+                        sleep 2
+                        if ! kill -0 \$TUNNEL_PID 2>/dev/null; then
+                            echo "ERRORE: il processo del tunnel non e' piu' attivo dopo 2 secondi"
+                            echo "--- Log del tunnel ---"
+                            cat /tmp/tunnel.log
+                            exit 1
+                        fi
+                        echo "Processo tunnel confermato attivo (PID \$TUNNEL_PID)"
+                        echo "--- Test raggiungibilita' con curl ---"
+                        curl -vk --max-time 3 https://127.0.0.1:${LOCAL_PORT}/version
+                        CURL_EXIT=\$?
+                        echo "Curl exit code: \$CURL_EXIT"
+                        if [ "\$CURL_EXIT" -ne 0 ]; then
+                            echo "ERRORE: porta non raggiungibile nonostante il processo sia attivo"
+                            echo "--- Log del tunnel ---"
+                            cat /tmp/tunnel.log
                             exit 1
                         fi
                     """
