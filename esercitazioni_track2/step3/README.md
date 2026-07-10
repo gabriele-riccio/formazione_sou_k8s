@@ -2,7 +2,7 @@
 
 ## Obiettivo
 
-Creare un Helm Chart utilizzando helm init custom (trabocchetto o versione vecchia esercizio) che effettui il deploy dell'immagine creata tramite la pipeline flask-app-example-build (in input deve essere possibile specificare quale tag rilasciare).
+Creare un Helm Chart utilizzando `helm init custom` (trabocchetto o versione vecchia esercizio dato che Helm 3 non supporta più helm init ho usato `helm create`) che effettui il deploy dell'immagine creata tramite la pipeline `flask-app-example-build` (in input deve essere possibile specificare quale tag rilasciare).
 Versionare Helm Chart nella repo "formazione_sou_k8s" in una sub-folder denominata "charts"
 
 ## Struttura
