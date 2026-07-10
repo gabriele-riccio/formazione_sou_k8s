@@ -27,7 +27,7 @@ pipeline {
                         env.MINIKUBE_REAL_PORT = sh(
                             script: """
                                 sshpass -p '${MAC_PASSWORD}' ssh -o StrictHostKeyChecking=no ${MAC_USER}@${MAC_GATEWAY_IP} \
-                                "kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}'" | sed 's|.*:||'
+                                "/usr/local/bin/kubectl cluster-info | grep -m1 -o '127.0.0.1:[0-9]*' | cut -d: -f2"
                             """,
                             returnStdout: true
                         ).trim()
