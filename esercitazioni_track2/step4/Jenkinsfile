@@ -45,19 +45,21 @@ pipeline {
                           -L ${LOCAL_PORT}:127.0.0.1:${env.MINIKUBE_REAL_PORT} \
                           ${MAC_USER}@${MAC_GATEWAY_IP}
                         echo "Exit code SSH tunnel: \$?"
-                        echo "--- Verifica raggiungibilita' porta locale (via curl) ---"
+                        echo "--- Verifica raggiungibilita' porta locale (via curl, output completo) ---"
                         SUCCESS=0
-                        for i in 1 2 3 4 5; do
-                            if curl -sk --max-time 2 https://127.0.0.1:${LOCAL_PORT}/version >/dev/null 2>&1; then
-                                echo "Tunnel raggiungibile al tentativo \$i"
+                        for i in 1 2 3; do
+                            echo "=== Tentativo \$i ==="
+                            curl -vk --max-time 3 https://127.0.0.1:${LOCAL_PORT}/version
+                            CURL_EXIT=\$?
+                            echo "Curl exit code: \$CURL_EXIT"
+                            if [ "\$CURL_EXIT" -eq 0 ]; then
                                 SUCCESS=1
                                 break
                             fi
-                            echo "Tentativo \$i: non ancora raggiungibile, riprovo..."
                             sleep 1
                         done
                         if [ "\$SUCCESS" -ne 1 ]; then
-                            echo "ERRORE: tunnel non raggiungibile dopo 5 tentativi"
+                            echo "ERRORE: tunnel non raggiungibile"
                             exit 1
                         fi
                     """
