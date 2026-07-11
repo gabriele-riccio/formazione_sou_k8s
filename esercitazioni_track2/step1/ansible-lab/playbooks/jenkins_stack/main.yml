@@ -23,6 +23,9 @@
       - "50000:50000"
     volumes:
       - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    groups:
+      - "989"
 
 - name: Avvia Jenkins Agent
   community.docker.docker_container:
