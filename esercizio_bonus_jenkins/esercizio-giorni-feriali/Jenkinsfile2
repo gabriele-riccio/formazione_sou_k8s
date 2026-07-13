@@ -8,7 +8,7 @@ pipeline {
                     def oggi = new Date()
                     int giornoSettimana = oggi[Calendar.DAY_OF_WEEK]
                     
-                    if (giornoSettimana == Calendar.THURSDAY) {
+                    if (giornoSettimana == Calendar.MONDAY) {
                         echo "WARNING: oggi si va da CICCIO's, non verra eseguita la build."
                         env.IS_WEEKEND = "true"
                     } else {
