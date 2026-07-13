@@ -213,4 +213,4 @@ Se si vuole utilizzare la pipeline Jenkinsfile inclusa nel progetto, configurare
 | `Permission denied` SSH | macOS depreca `ssh-rsa` | Aggiunto `PubkeyAcceptedAlgorithms+ssh-rsa` nell'inventory |
 | IP in conflitto con altra VM | Stesso IP `192.168.56.10` già in uso | Usato `192.168.56.20` |
 | `No module named requests` | Libreria Python mancante sulla VM | Aggiunto task installazione `python3-requests` nel playbook Docker |
-| Agent Jenkins offline | Typo nel nome variabile d'ambiente (`JENNKINS_SECRET`) | Corretto in `JENKINS_SECRET` nel ruolo |# Step 1 — Workstation Mac
+| Agent Jenkins offline | Tipo nel nome variabile d'ambiente (`JENNKINS_SECRET`) | Corretto in `JENKINS_SECRET` |
