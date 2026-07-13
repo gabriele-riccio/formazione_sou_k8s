@@ -191,20 +191,6 @@ Se si vuole utilizzare la pipeline Jenkinsfile inclusa nel progetto, configurare
 | `rocky9-ssh-key` | SSH Username with private key | Chiave da `.vagrant/machines/default/virtualbox/private_key`, username: `vagrant` |
 | `ansible-vault-pass` | Secret file | File `.vault_pass` della cartella `ansible-lab` |
 
----
-
-## Extra — Stack applicativo e pipeline Jenkins
-
-In aggiunta ai requisiti della traccia, il progetto include:
-
-**Stack applicativo** (`deploy_app.yml`): deploya Nginx (porta 8081) e Redis sulla rete Docker `step1_network` con IP statici, usando Ansible Vault per proteggere la password di Redis.
-
-**Pipeline Jenkins** (`esercitazione_step1/Jenkinsfile`): orchestrata dall'Agent, esegue in sequenza:
-1. Checkout del repository
-2. Validazione sintattica del playbook (`--syntax-check`)
-3. Dry-run contro la VM (`--check --diff`)
-4. Deploy reale (opzionale, parametro `ESEGUI_DAVVERO`)
-5. Verifica post-deploy: controlla che Nginx risponda HTTP 200
 
 ---
 
@@ -212,7 +198,7 @@ In aggiunta ai requisiti della traccia, il progetto include:
 
 **Chiave SSH RSA su macOS**: le versioni recenti di OpenSSH disabilitano `ssh-rsa` di default. L'inventory include `ansible_ssh_common_args='-o PubkeyAcceptedAlgorithms=+ssh-rsa -o HostKeyAlgorithms=+ssh-rsa'` per garantire la compatibilità.
 
-**IP statici**: Jenkins Master e Agent hanno IP assegnati dalla rete `jenkins_network`. Lo stack extra usa la rete `step1_network` (subnet `172.26.0.0/24`) per separazione.
+**IP statici**: Jenkins Master e Agent hanno IP assegnati dalla rete `jenkins_network`.
 
 **Idempotenza**: tutti i playbook sono idempotenti — possono essere rilanciti senza effetti collaterali.
 
