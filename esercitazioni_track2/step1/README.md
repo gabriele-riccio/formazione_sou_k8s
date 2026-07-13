@@ -99,16 +99,7 @@ ansible rocky9 -m ping
 
 > **Nota**: la chiave SSH generata da Vagrant su macOS Ventura è di tipo RSA, deprecato dal client SSH di default. L'inventory include già `ansible_ssh_common_args` con le opzioni di compatibilità necessarie.
 
-### 2. Crea il file della vault password
-
-```bash
-echo "la-tua-password-vault" > .vault_pass
-chmod 600 .vault_pass
-```
-
-Il file è in `.gitignore` e non viene mai committato nel repository.
-
-### 3. Installa Docker sulla VM
+### 2. Installa Docker sulla VM
 
 ```bash
 ansible-playbook playbooks/install_docker.yml
@@ -116,7 +107,7 @@ ansible-playbook playbooks/install_docker.yml
 
 Il playbook installa Docker Engine, abilita il servizio, e aggiunge l'utente `vagrant` al gruppo `docker`. Installa anche le librerie Python necessarie (`requests`, `setuptools`) per i moduli Ansible della collection `community.docker`.
 
-### 4. Deploya Jenkins Master e Agent
+### 3. Deploya Jenkins Master e Agent
 
 ```bash
 ansible-playbook playbooks/deploy_jenkins.yml
@@ -130,7 +121,7 @@ Il playbook:
 
 Jenkins è disponibile su `http://192.168.56.20:8080`.
 
-### 5. Configura Jenkins al primo avvio
+### 4. Configura Jenkins al primo avvio
 
 Recupera la password iniziale:
 
@@ -146,7 +137,7 @@ Sul browser:
 3. Crea utente admin
 4. **Save and Finish** → **Start using Jenkins**
 
-### 6. Collega l'Agent al Master
+### 5. Collega l'Agent al Master
 
 Su Jenkins → **Gestisci Jenkins → Nodi → New Node**:
 
@@ -180,31 +171,6 @@ Deve comparire `INFO: Connected`.
 
 ---
 
-## Credenziali Jenkins (per la pipeline extra)
-
-Se si vuole utilizzare la pipeline Jenkinsfile inclusa nel progetto, configurare queste credenziali su Jenkins prima del primo run:
-
-**Gestisci Jenkins → Credentials → System → Global credentials → Add Credentials**
-
-| ID | Kind | Contenuto |
-|----|------|-----------|
-| `rocky9-ssh-key` | SSH Username with private key | Chiave da `.vagrant/machines/default/virtualbox/private_key`, username: `vagrant` |
-| `ansible-vault-pass` | Secret file | File `.vault_pass` della cartella `ansible-lab` |
-
-
----
-
-## Note tecniche
-
-**Chiave SSH RSA su macOS**: le versioni recenti di OpenSSH disabilitano `ssh-rsa` di default. L'inventory include `ansible_ssh_common_args='-o PubkeyAcceptedAlgorithms=+ssh-rsa -o HostKeyAlgorithms=+ssh-rsa'` per garantire la compatibilità.
-
-**IP statici**: Jenkins Master e Agent hanno IP assegnati dalla rete `jenkins_network`.
-
-**Idempotenza**: tutti i playbook sono idempotenti — possono essere rilanciti senza effetti collaterali.
-
-**Vault**: le variabili sensibili (es. password Redis) sono cifrate con Ansible Vault. Il file `.vault_pass` è escluso dal repository tramite `.gitignore`.
-
----
 
 ## Problemi noti e soluzioni
 
