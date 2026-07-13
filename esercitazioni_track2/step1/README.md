@@ -25,17 +25,16 @@ Mac (control node)
 │             │
 │             └── Docker
 │                  ├── jenkins_network (172.18.0.0/16)
-│                  │    ├── jenkins-controller  → Jenkins Master (porta 8080, 50000)
-│                  │    └── jenkins-agent       → Jenkins Agent (label: docker)
-│                  │
-│                  └── [EXTRA] step1_network (172.26.0.0/24)
-│                       ├── app_web   → Nginx  (172.26.0.10, porta 8081)
-│                       └── app_cache → Redis  (172.26.0.11, rete interna)
+│                      ├── jenkins-controller  → Jenkins Master (porta 8080, 50000)
+│                      └── jenkins-agent       → Jenkins Agent (label: docker)
+│                  
+│                 
+│                   
+│                     
 │
 └── Ansible
      ├── playbooks/install_docker.yml   → installa Docker sulla VM
-     ├── playbooks/deploy_jenkins.yml   → avvia Jenkins Master + Agent
-     └── [EXTRA] playbooks/deploy_app.yml → deploya stack Nginx + Redis
+     └── playbooks/deploy_jenkins.yml   → avvia Jenkins Master + Agent
 ```
 
 ---
@@ -48,19 +47,10 @@ esercitazioni_track2/step1/
 │   ├── ansible.cfg
 │   ├── inventory/
 │   │   └── hosts.ini
-│   ├── vars/
-│   │   ├── main.yml       # variabili in chiaro
-│   │   └── vault.yml      # variabili cifrate con Ansible Vault
-│   ├── .vault_pass        # password Vault (gitignored)
 │   └── playbooks/
 │       ├── install_docker.yml
-│       ├── deploy_jenkins.yml
-│       ├── [EXTRA] deploy_app.yml
-│       └── roles/
-│           ├── jenkins_stack/   # Master + Agent
-│           └── [EXTRA] app_stack/  # Nginx + Redis
-├── [EXTRA] esercitazione_step1/
-│   └── Jenkinsfile
+│       └── deploy_jenkins.yml
+│
 └── README.md
 ```
 
