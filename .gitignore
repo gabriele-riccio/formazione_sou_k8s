@@ -219,3 +219,4 @@ __marimo__/
 esercitazioni_track2/step1/ansible-lab/.vagrant/
 formazione_sou_k8s/
 esercitazioni_track2/step4/jenkins-kubeconfig.yaml
+.vagrant/
