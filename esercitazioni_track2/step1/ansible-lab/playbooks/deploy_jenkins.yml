@@ -2,6 +2,45 @@
 - name: Deploy Jenkins Controller e Agent
   hosts: rocky9
   become: true
+  tasks:
+    - name: Crea rete Docker per Jenkins
+      community.docker.docker_network:
+        name: jenkins_network
+        driver: bridge
+        state: present
 
-  roles:
-    - jenkins_stack
+    - name: Crea volume per i dati Jenkins
+      community.docker.docker_volume:
+        name: jenkins_home
+        state: present
+
+    - name: Avvia jenkins Controller(Master)
+      community.docker.docker_container:
+        name: jenkins-controller
+        image: jenkins/jenkins:lts
+        state: started
+        restart_policy: always
+        networks:
+          - name: jenkins_network
+        ports:
+          - "8080:8080"
+          - "50000:50000"
+        volumes:
+          - jenkins_home:/var/jenkins_home
+          - /var/run/docker.sock:/var/run/docker.sock
+        groups:
+          - "989"
+
+    - name: Avvia Jenkins Agent
+      community.docker.docker_container:
+        name: jenkins-agent
+        image: jenkins/inbound-agent
+        state: started
+        restart_policy: always
+        networks:
+          - name: jenkins_network
+        env:
+          JENKINS_URL: "http://jenkins-controller:8080"
+          JENKINS_AGENT_NAME: "agent-docker-1"
+          JENKINS_SECRET: "a92dd7b0fc241e7e6482e26980dcd08f2eb476fb45ed682102eb858d760782bd"
+          JENKINS_AGENT_WORKDIR: "/home/jenkins/agent"
