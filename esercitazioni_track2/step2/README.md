@@ -239,3 +239,4 @@ Tag prodotti durante l'esercizio:
 
 ## DockerHub
 ![prima parte_DockerHub](step2/Screenshot%202026-06-24%20alle%2014.50.47.png)
+# test develop Tue Jul 14 10:06:34 CEST 2026
