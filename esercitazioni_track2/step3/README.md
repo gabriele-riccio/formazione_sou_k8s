@@ -68,7 +68,9 @@ appVersion: "1.0.0"
 | `description` | aggiornata | Ho descritto l'esercizio che deve fare il deploy di flask-app-example |
 | `version` | `0.1.0` | versione del chart (struttura/template) |
 | `appVersion` | `"1.0.0"` | versione applicativa di riferimento, usata come fallback del tag immagine |
-> Ho aggiornato l'appVersion in `"1.0.0"` dato che
+> Ho aggiornato l'appVersion in `"1.0.0"` per indicare che il chart nella sua versione attuale (0.1.0) è pensato per deployare la versione
+> 1.0.0 dell'applicazione Flask(informativo).
+
 ### values.yaml
 
 ```yaml
