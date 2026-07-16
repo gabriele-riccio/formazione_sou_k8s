@@ -1,0 +1,22 @@
+Vagrant.configure("2") do |config|
+  config.vm.define "db-primario" do |primario|
+    primario.vm.box = "generic/rocky9"
+    primario.vm.hostname = "db-primario"
+    primario.vm.network "private_network", ip: "192.168.56.50"
+    primario.vm.provider "virtualbox" do |vb|
+      vb.memory = "1024"
+      vb.cpus = 1
+    end
+  end
+
+  config.vm.define "db-restore" do |restore|
+    restore.vm.box = "generic/rocky9"
+    restore.vm.hostname = "db-restore"
+    restore.vm.network "private_network", ip: "192.168.56.51"
+    restore.vm.provider "virtualbox" do |vb|
+      vb.memory = "1024"
+      vb.cpus = 1
+    end
+  end
+end
+

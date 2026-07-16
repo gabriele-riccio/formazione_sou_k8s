@@ -1,0 +1,51 @@
+---
+- name: Creazione database, utenti e dati di test
+  hosts: db_primario
+  become: true
+  vars_files:
+    - ../vars/main.yml
+    - ../vars/vault.yml
+
+  tasks:
+    - name: Creo il database
+      community.mysql.mysql_db:
+        name: "{{ db_name }}"
+        state: present
+        login_user: root
+        login_password: "{{ db_root_password }}"
+
+    - name: Creo l'utente con privilegi
+      community.mysql.mysql_user:
+        name: "{{ db_user }}"
+        password: "{{ db_password }}"
+        host: "%"
+        priv: "{{ db_name }}.*:ALL"
+        state: present
+        login_user: root
+        login_password: "{{ db_root_password }}"
+
+    - name: Creo la tabella utenti_test
+      community.mysql.mysql_query:
+        login_db: "{{ db_name }}"
+        login_user: root
+        login_password: "{{ db_root_password }}"
+        query: >
+          CREATE TABLE IF NOT EXISTS utenti_test (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            nome VARCHAR(50) NOT NULL,
+            email VARCHAR(100) NOT NULL UNIQUE,
+            data_creazione TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )
+
+    - name: Inserisco i dati
+      community.mysql.mysql_query:
+        login_db: "{{ db_name }}"
+        login_user: root
+        login_password: "{{ db_root_password }}"
+        query: >
+          INSERT IGNORE INTO utenti_test (nome, email) VALUES
+          ('Mario Rossi', 'mario.rossi@test.it'),
+          ('Luca Bianchi', 'luca.bianchi@test.it'),
+          ('Anna Verdi', 'anna.verdi@test.it'),
+          ('Giulia Neri', 'giulia.neri@test.it'),
+          ('Paolo Gialli', 'paolo.gialli@test.it')

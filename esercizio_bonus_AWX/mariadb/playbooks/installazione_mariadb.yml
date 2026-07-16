@@ -1,0 +1,24 @@
+---
+- name: Installazione e avvio di MariaDB
+  hosts: mariadb
+  become: true
+  vars_files:
+    - ../vars/main.yml
+    - ../vars/vault.yml
+
+  tasks:
+    - name: Installa mariadb-server
+      dnf:
+        name: mariadb-server
+        state: present
+
+    - name: Installa PyMySQL (per il modulo community.mysql.mysql.db)
+      dnf:
+        name: python3-PyMySQL
+        state: present
+
+    - name: Avvia e abilita mariadb
+      systemd:
+        name: mariadb
+        state: started
+        enabled: true

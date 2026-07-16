@@ -1,0 +1,48 @@
+---
+- name: Scarica il backup da db-primario
+  hosts: db_primario
+  become: true
+  tasks:
+    - name: Fetch del file di dump verso il control node
+      fetch:
+        src: /tmp/backup_appdb.sql
+        dest: /tmp/ansible_backup_appdb.sql
+        flat: true
+
+- name: Restore del backup su db-restore
+  hosts: db_restore
+  become: true
+  vars_files:
+    - ../vars/main.yml
+    - ../vars/vault.yml
+
+  tasks:
+    - name: Carica il file di dump sulla VM di destinazione
+      copy:
+        src: /tmp/ansible_backup_appdb.sql
+        dest: "{{ db_dump_path }}"
+
+    - name: Crea il database di destinazione (se non esiste)
+      community.mysql.mysql_db:
+        name: "{{ db_name }}"
+        state: present
+        login_user: root
+        login_password: "{{ db_root_password }}"
+
+    - name: Crea l'utente applicativo di destinazione (se non esiste)
+      community.mysql.mysql_user:
+        name: "{{ db_user }}"
+        password: "{{ db_password }}"
+        host: "%"
+        priv: "{{ db_name }}.*:ALL"
+        state: present
+        login_user: root
+        login_password: "{{ db_root_password }}"
+
+    - name: Esegue il restore del dump
+      community.mysql.mysql_db:
+        name: "{{ db_name }}"
+        state: import
+        target: "{{ db_dump_path }}"
+        login_user: root
+        login_password: "{{ db_root_password }}"

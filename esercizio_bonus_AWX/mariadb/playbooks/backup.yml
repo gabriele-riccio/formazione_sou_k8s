@@ -1,0 +1,17 @@
+---
+- name: Backup del database
+  hosts: db_primario
+  become: true
+  vars_files:
+    - ../vars/main.yml
+    - ../vars/vault.yml
+
+  tasks:
+    - name: Eseguo il dump del database
+      community.mysql.mysql_db:
+        name: "{{ db_name }}"
+        state: dump
+        target: "{{ db_dump_path }}"
+        login_user: root
+        login_password: "{{ db_root_password }}"
+

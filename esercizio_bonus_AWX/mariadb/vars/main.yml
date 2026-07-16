@@ -1,0 +1,2 @@
+db_name: appdb
+db_dump_path: /tmp/backup_appdb.sql
