@@ -377,7 +377,7 @@ ansible-playbook playbooks/backup_corrotto_restore.yml
 ```
 
 **Esito dell'esecuzione sul terminale**:
-
+![prima parte terminale](AWX/Screenshot%202026-07-16%20alle%2016.21.41.png)
 
 
 | Verifica | Risultato |
