@@ -1,0 +1,77 @@
+---
+- name: Creo un backup corrotto per vedere la gestione degli errori
+  hosts: db_primario
+  become: true
+  vars_files:
+    - ../vars/main.yml
+    - ../vars/vault.yml
+  tasks:
+    - name: Copio il backup giusto in un file di test
+      copy:
+        remote_src: true
+        src: "{{ db_dump_path }}"
+        dest: /tmp/backup_corrotto.sql
+    - name: Aggiungo una riga (Fabio Tozzi)
+      lineinfile:
+        path: /tmp/backup_corrotto.sql
+        line: "INSERT INTO `utenti_test` VALUES (1,'Fabio Tozzi','fabio.tozzi@test.it','2026-07-16 15:20:40');"
+        insertafter: EOF
+    - name: Fetch del file verso il Mac
+      fetch:
+        src: /tmp/backup_corrotto.sql
+        dest: /tmp/ansible_backup_corrotto.sql
+        flat: true
+
+- name: Provo a fare lo stesso il restore con gestione dell'errore
+  hosts: db_restore
+  become: true
+  vars_files:
+    - ../vars/main.yml
+    - ../vars/vault.yml
+  tasks:
+    - name: Copio il file corrotto sulla VM di restore
+      copy:
+        src: /tmp/ansible_backup_corrotto.sql
+        dest: /tmp/backup_corrotto.sql
+
+    - name: Blocco il restore e gestisco l'errore
+      block:
+        - name: Tento prima il restore lo stesso
+          community.mysql.mysql_db:
+            name: "{{ db_name }}"
+            state: import
+            target: /tmp/backup_corrotto.sql
+            login_user: root
+            login_password: "{{ db_root_password }}"
+        - name: Messaggio se il restore funziona (non credo)
+          debug:
+            msg: "Restore FUNZIONA! Non dovrebbe essendoci stato una corruzione del backup, controllare meglio!"
+      rescue:
+        - name: Segnalo il messaggio d'errore
+          debug:
+            msg: "Restore fallito come previsto, il backup è stato corrotto!!!"
+        - name: Verifico se i dati sono stati modificati
+          community.mysql.mysql_query:
+            login_db: "{{ db_name }}"
+            login_user: root
+            login_password: "{{ db_root_password }}"
+            query: "SELECT COUNT(*) AS totale FROM utenti_test"
+          register: verifica_dati
+        - name: Mostro il conteggio delle righe attuali
+          debug:
+            msg: "Righe attuali in utenti_test dopo il tentativo fallito: {{ verifica_dati.query_result[0][0].totale }}"
+        - name: Verifico che Fabio Tozzi non sia stato inserito
+          community.mysql.mysql_query:
+            login_db: "{{ db_name }}"
+            login_user: root
+            login_password: "{{ db_root_password }}"
+            query: "SELECT COUNT(*) AS trovato FROM utenti_test WHERE email = 'fabio.tozzi@test.it'"
+          register: verifica_fabio
+        - name: Mostra se Fabio Tozzi è presente (se è 0 non lo è)
+          debug:
+            msg: "Righe con email fabio.tozzi@test.it trovate: {{ verifica_fabio.query_result[0][0].trovato }}"
+      always:
+        - name: Pulisco il file di test che ho corrotto
+          file:
+            path: /tmp/backup_corrotto.sql
+            state: absent
