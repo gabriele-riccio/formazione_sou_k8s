@@ -306,3 +306,86 @@ mysql -u root -p -e "CHECKSUM TABLE appdb.utenti_test;"
 Eseguito su entrambe le VM dopo il flusso Ansible completo: checksum
 identico (`150684391`) — consistenza dei dati confermata end-to-end,
 questa volta orchestrata interamente da Ansible.
+
+
+### 5. Gestione degli errori nel restore (backup corrotto)
+
+Task aggiuntivo: dimostrare la gestione esplicita di un errore reale
+durante il restore, invece di lasciarlo fallire in modo "grezzo".
+Playbook dedicato e separato da `restore.yml`, per non intaccare il
+flusso già verificato: `playbooks/backup_corrotto_restore.yml`.
+
+**Come viene corrotto il backup**: su `db-primario`, il dump buono lo copio in un file di test separato, a cui viene aggiunta in coda una
+riga con `Fabio Tozzi` con un id già esistente `1`:
+
+```yaml
+- name: Copio il backup giusto in un file di test
+  copy:
+    remote_src: true
+    src: "{{ db_dump_path }}"
+    dest: /tmp/backup_corrotto.sql
+
+- name: Aggiungo una riga (Fabio Tozzi)
+  lineinfile:
+    path: /tmp/backup_corrotto.sql
+    line: "INSERT INTO `utenti_test` VALUES (1,'Fabio Tozzi','fabio.tozzi@test.it','2026-07-16 15:20:40');"
+    insertafter: EOF
+```
+
+**Gestione dell'errore con `block` / `rescue` / `always`** — sulla VM
+`db-restore`, metto il tentativo di import racchiuso in un `block`; se fallisce,
+Ansible passa al `rescue` invece di interrompere l'intero playbook:
+
+```yaml
+- name: Blocco il restore e gestisco l'errore
+  block:
+    - name: Tento prima il restore lo stesso
+      community.mysql.mysql_db:
+        name: "{{ db_name }}"
+        state: import
+        target: /tmp/backup_corrotto.sql
+        login_user: root
+        login_password: "{{ db_root_password }}"
+  rescue:
+    - name: Segnalo il messaggio d'errore
+      debug:
+        msg: "Restore fallito come previsto, il backup è stato corrotto!!!"
+    - name: Verifico se i dati sono stati modificati
+      community.mysql.mysql_query:
+        login_db: "{{ db_name }}"
+        login_user: root
+        login_password: "{{ db_root_password }}"
+        query: "SELECT COUNT(*) AS totale FROM utenti_test"
+      register: verifica_dati
+    - name: Verifico che Fabio Tozzi non sia stato inserito
+      community.mysql.mysql_query:
+        login_db: "{{ db_name }}"
+        login_user: root
+        login_password: "{{ db_root_password }}"
+        query: "SELECT COUNT(*) AS trovato FROM utenti_test WHERE email = 'fabio.tozzi@test.it'"
+      register: verifica_fabio
+  always:
+    - name: Pulisco il file di test che ho corrotto
+      file:
+        path: /tmp/backup_corrotto.sql
+        state: absent
+```
+Eseguo il playbook:
+
+```bash
+ansible-playbook playbooks/backup_corrotto_restore.yml
+```
+
+**Esito dell'esecuzione sul terminale**:
+
+
+
+| Verifica | Risultato |
+|---|---|
+| Errore SQL reale intercettato | Sì — violazione PRIMARY KEY, non simulata |
+| Righe in `utenti_test` dopo il tentativo fallito | 5 (invariato) |
+| Riga "Fabio Tozzi" presente nel DB | 0 (mai scritta, nemmeno parzialmente) |
+| `PLAY RECAP` | `failed=0`, `rescued=1` |
+
+
+
