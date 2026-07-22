@@ -1,4 +1,4 @@
-# Esercizio Cluster API (CAPD)
+# Esercizio Cluster API e deploy applicazione
 
 Creazione di un cluster Kubernetes tramite **Cluster API**, usando il provider infrastrutturale **Docker (CAPD)** per il provisioning locale, con successivo deploy di un'applicazione tramite Helm (quella fatta nello step3 della track2).
 
