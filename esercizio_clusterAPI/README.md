@@ -10,16 +10,6 @@ Creazione di un cluster Kubernetes tramite **Cluster API**, usando il provider i
 - Deployare l'applicazione `flask-app-example` (già containerizzata e con chart Helm da uno step precedente) sul nuovo cluster
 
 
-
-## Struttura dei file
-
-| File | Descrizione |
-|---|---|
-| `kind-capi-config.yaml` | Config kind con mount di `/var/run/docker.sock`, necessaria per far funzionare CAPD |
-| `cluster-api.yaml` | Manifest generato con `clusterctl generate cluster` (flavor `development`, ClusterClass) |
-| `clusterapi.kubeconfig` | Kubeconfig del workload cluster (IP corretto per macOS, vedi sotto) |
-| `Cluster_API_guida_completa.pdf` | Guida teorica + pratica + troubleshooting completo dell'esercizio |
-
 ## Procedura
 
 ### 1. Scarico clusterctl
