@@ -16,7 +16,7 @@ step5/
 │   └── cluster-reader.yaml   # ServiceAccount + ClusterRole + ClusterRoleBinding
 ├── export/                   # output rigenerabile (escluso dal repo)
 ├── check-deployment.sh       # l'automatismo scritto in bash
- ── README.md
+└── README.md
 ```
 
 ## Prerequisiti
@@ -24,7 +24,7 @@ step5/
 | Requisito | Note |
 |---|---|
 | Cluster Kubernetes ≥ 1.24 | serve la TokenRequest API |
-| `kubectl` | configurato con un contesto che possa creare token |
+| `kubectl` | configurato con un contesto che possa creare un token |
 | `jq` | parsing del JSON esportato |
 | Deployment target | installato via Helm (Step 4) |
 
