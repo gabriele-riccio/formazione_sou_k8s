@@ -1,0 +1,4 @@
+# Output rigenerabile dello script di check
+export/
+# Backup lasciati dagli editor
+*.bak
