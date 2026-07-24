@@ -1,8 +1,7 @@
-# Step 5 — Check Deployment Best Practices
+# Step 5 - Check Deployment Best Practices
 
-Script Bash esegua un export del Deployment dell'applicazione Flask che ho installato negli step precendeti autenticandomi tramite un
-ServiceAccount dedicato (`cluster-reader`) e ne verifica la conformità alle best practices di Kubernetes:
-L'automatismo deve ritornare un errore se non sono presenti nel Deployment i seguenti attributi: Readiness e Liveness Probles, Limits e Requests.
+Script Bash che esegue un export del Deployment dell'applicazione Flask che ho installato negli step precendeti autenticandomi tramite un ServiceAccount dedicato (`cluster-reader`) e ne verifica le conformità alle best practices di Kubernetes ritornando errore:
+`Readiness e Liveness Probles`, `Limits` e `Requests`.
 
 Approccio scelto tra i quattro ammessi dalla consegna: **wrapping di `kubectl`**.
 
@@ -14,10 +13,19 @@ Approccio scelto tra i quattro ammessi dalla consegna: **wrapping di `kubectl`**
 step5/
 ├── rbac/
 │   └── cluster-reader.yaml   # ServiceAccount + ClusterRole + ClusterRoleBinding
-├── export/                   # output rigenerabile (escluso dal repo)
-├── check-deployment.sh       # l'automatismo scritto in bash
+├── export/                   # Output rigenerabile (escluso dal repo)
+├── check-deployment.sh       # Script di automazione scritto in bash
 └── README.md
 ```
+
+| Voce | Scelta |
+|---|---|
+| Linguaggio script di automazione | Bash |
+| Metodo di accesso alle API | wrapping di kubectl |
+| Cluster | Minikube (locale) |
+| Namespace | formazione-sou |
+| Deployment target | flask-app-example (container: flask-app) installato via Helm (Step 4) |
+| Chart Helm di riferimento | esercitazioni_track2/step3/charts/flask-app |
 
 ## Prerequisiti
 
@@ -27,6 +35,63 @@ step5/
 | `kubectl` | configurato con un contesto che possa creare un token |
 | `jq` | parsing del JSON esportato |
 | Deployment target | installato via Helm (Step 4) |
+
+---
+## Svolgimento
+Dopo aver startato il cluster Minikube che ho utilizzato negli esercizi precedenti ho implementato RBAC di K8S (il quale serve viene utlizzato per la parte di `autorizzazione` per l'accesso alle API di K8S)
+
+## Implementazione dell'RBAC
+Vediamo prima gli oggetti:
+
+| Ogetto | Scope | Funzione |
+|---|---|---|
+| ServiceAccount | namespace | Identità non umana; nome canonico: system:serviceaccount:<ns>:<nome> |
+| Role | namespace | Insieme di permessi validi in un solo namespace |
+| ClusterRole | cluster | Permessi su risorse cluster-scoped (nodes, PV, namespaces) e non-resource URL (/healthz) |
+| RoleBinding | namespace | Associa un soggetto a un ruolo, limitatamente al proprio namespace |
+| ClusterRoleBinding | cluster | Associa un soggetto a un ClusterRole in tutti i namespace |
+
+>Un RoleBinding puo' referenziare un ClusterRole: in tal caso i permessi restano confinati al namespace del RoleBinding.
+>E' il pattern corretto per riusare un ruolo scritto una sola volta senza concedere accesso all'intero cluster.
+
+File: step5/rbac/cluster-reader.yaml
+
+```
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cluster-reader
+  namespace: formazione-sou
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cluster-reader
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets", "statefulsets", "daemonsets"]
+    verbs: ["get", "list", "watch"]
+
+  - apiGroups: [""]
+    resources: ["pods", "services", "namespaces"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cluster-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-reader
+subjects:
+  - kind: ServiceAccount
+    name: cluster-reader
+    namespace: formazione-sou
+
+```
+
 
 ## Installazione dell'RBAC
 
